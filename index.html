@@ -291,8 +291,7 @@
   .cm-poi text { font-family: var(--serif); font-size: 19px; font-weight: 700; fill: #1F2A33; paint-order: stroke; stroke: #FFFFFF; stroke-width: 4px; }
   .cm-poi:hover text { fill: #B4732A; }
   .cm-live { height: 420px; width: 100%; }
-  .cm-tip { font-weight: 700; }
-  .leaflet-attribution-flag { display: none !important; width: 0 !important; }
+  .amap-marker-label { border: 1px solid #B4732A; border-radius: 6px; background: rgba(255,255,255,.95); color: #22303F; font-family: var(--serif); font-weight: 600; font-size: 12px; padding: 2px 7px; }
   .cm-note { font-size: 11.5px; color: var(--haze-faint); margin-top: 8px; }
   .navlinks { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 4px; font-size: 13px; }
   .navlinks .nk { color: var(--haze-faint); font-size: 12px; margin-right: 2px; }
@@ -665,53 +664,75 @@
       tiles + route + pois + '</svg></div>' +
       '<p class="cm-note">真实街道底图（' + CITYTILES._attrib + '，构建时内嵌）· 点位坐标经地理编码校准 · 点击点位名跳转高德导航。</p></div>';
   }
-  /* 公网部署时自动升级为可拖拽缩放的交互地图；Artifact 环境外网被禁会静默失败，保持内嵌静态图 */
-  var BAIDU_AK = ''; /* 百度地图开发者 AK：免费申请后填入，告知我接入百度底图 */
-  var leafletP = null;
-  function ensureLeaflet() {
-    if (leafletP) return leafletP;
-    leafletP = new Promise(function (res, rej) {
-      var need = 2;
-      function done() { if (--need === 0) res(window.L); }
-      var l = document.createElement('link'); l.rel = 'stylesheet';
-      l.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
-      l.onload = done; l.onerror = rej;
-      document.head.appendChild(l);
+  /* 打开时自动升级为高德交互地图（大陆免翻墙）；Artifact 环境外网被禁会静默失败，保持内嵌静态图 */
+  var AMAP_KEY = 'af996e83a18060bb2e3d001b317ec7c8';
+  var AMAP_JSCODE = 'fe2b87c5c26ec7793dfdf403e06436a3';
+  var amapP = null;
+  function ensureAMap() {
+    if (amapP) return amapP;
+    window._AMapSecurityConfig = { securityJsCode: AMAP_JSCODE };
+    amapP = new Promise(function (res, rej) {
       var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
-      s.onload = done; s.onerror = rej;
+      s.src = 'https://webapi.amap.com/maps?v=2.0&key=' + AMAP_KEY;
+      s.onload = function () { if (window.AMap) res(window.AMap); else rej(new Error('no AMap')); };
+      s.onerror = rej;
       document.head.appendChild(s);
     });
-    return leafletP;
+    return amapP;
   }
-  var KCOL = { train: ['#FFFFFF', '#B4732A'], plane: ['#FFFFFF', '#B4552F'], sight: ['#B4732A', '#FFFFFF'], hotel: ['#FFFFFF', '#5D6E7E'] };
+  /* WGS-84 → GCJ-02（高德坐标系）标准偏移算法 */
+  function wgs2gcj(lon, lat) {
+    var PI = Math.PI, a = 6378245.0, ee = 0.00669342162296594323;
+    function tLat(x, y) {
+      var r = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+      r += (20 * Math.sin(6 * x * PI) + 20 * Math.sin(2 * x * PI)) * 2 / 3;
+      r += (20 * Math.sin(y * PI) + 40 * Math.sin(y / 3 * PI)) * 2 / 3;
+      r += (160 * Math.sin(y / 12 * PI) + 320 * Math.sin(y * PI / 30)) * 2 / 3;
+      return r;
+    }
+    function tLon(x, y) {
+      var r = 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+      r += (20 * Math.sin(6 * x * PI) + 20 * Math.sin(2 * x * PI)) * 2 / 3;
+      r += (20 * Math.sin(x * PI) + 40 * Math.sin(x / 3 * PI)) * 2 / 3;
+      r += (150 * Math.sin(x / 12 * PI) + 300 * Math.sin(x / 30 * PI)) * 2 / 3;
+      return r;
+    }
+    var dLat = tLat(lon - 105.0, lat - 35.0), dLon = tLon(lon - 105.0, lat - 35.0);
+    var radLat = lat / 180.0 * PI, magic = Math.sin(radLat);
+    magic = 1 - ee * magic * magic;
+    var sqrtMagic = Math.sqrt(magic);
+    dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * PI);
+    dLon = (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * PI);
+    return [lon + dLon, lat + dLat];
+  }
   function upgradeMapsIn(root) {
     root.querySelectorAll('.cm-card[data-mapcity]').forEach(function (card) {
       var city = card.getAttribute('data-mapcity');
       var seq = (card.getAttribute('data-seq') || '').split(',').filter(Boolean);
-      ensureLeaflet().then(function (L) {
+      ensureAMap().then(function (AMap) {
         var g = CITYTILES[city];
         var div = document.createElement('div'); div.className = 'cm-live';
         card.innerHTML = ''; card.appendChild(div);
-        var map = L.map(div, { scrollWheelZoom: false });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-          { attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 18 }).addTo(map);
-        var bounds = [];
+        var map = new AMap.Map(div, { mapStyle: 'amap://styles/whitesmoke', viewMode: '2D', resizeEnable: true });
         Object.keys(g.pois).forEach(function (k) {
           var p = g.pois[k]; if (!p.lat) return;
-          var c = KCOL[p.kind] || KCOL.train;
-          var mk = L.circleMarker([p.lat, p.lon], { radius: 8, color: c[0], weight: 2, fillColor: c[1], fillOpacity: 1 }).addTo(map);
-          mk.bindTooltip(p.n, { direction: 'top', className: 'cm-tip' });
+          var mk = new AMap.Marker({ map: map, position: wgs2gcj(p.lon, p.lat), title: p.n, anchor: 'bottom-center',
+            label: { content: p.n, direction: 'top', offset: new AMap.Pixel(0, -2) } });
           mk.on('click', function () { window.open(navUrl(city, p.n), '_blank'); });
-          bounds.push([p.lat, p.lon]);
         });
-        if (seq.length > 1) {
-          var line = seq.map(function (k) { return g.pois[k]; }).filter(function (p) { return p && p.lat; }).map(function (p) { return [p.lat, p.lon]; });
-          if (line.length > 1) L.polyline(line, { color: '#B4552F', weight: 3, dashArray: '6 9' }).addTo(map);
+        map.setFitView(null, true, [46, 46, 46, 46]);
+        var pts = seq.map(function (k) { return g.pois[k]; }).filter(function (p) { return p && p.lat; }).map(function (p) { return wgs2gcj(p.lon, p.lat); });
+        if (pts.length > 1) {
+          map.plugin(['AMap.Driving'], function () {
+            for (var i = 0; i < pts.length - 1; i++) (function (a, b) {
+              new AMap.Driving({ map: map, hideMarkers: true, autoFitView: false }).search(a, b, function (status) {
+                if (status !== 'complete') new AMap.Polyline({ map: map, path: [a, b], strokeColor: '#B4552F', strokeWeight: 3, strokeStyle: 'dashed' });
+              });
+            })(pts[i], pts[i + 1]);
+          });
         }
-        if (bounds.length) map.fitBounds(bounds, { padding: [36, 36] });
         var note = card.parentElement.querySelector('.cm-note');
-        if (note) note.textContent = '交互地图 · 可拖拽缩放（© OpenStreetMap © CARTO）· 点击点位跳转高德导航。';
+        if (note) note.textContent = '高德交互地图 · 可拖拽缩放 · 点击点位跳高德导航 · 当日路线为高德驾车规划。';
       }).catch(function () {});
     });
   }
