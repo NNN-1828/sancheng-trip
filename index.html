@@ -206,9 +206,34 @@
   .fine-grid p { margin: 0; line-height: 1.7; } .fine-grid b { color: var(--haze-soft); font-weight: 600; }
   .stg { font-family: var(--mono); font-size: 10.5px; padding: 1px 7px; border-radius: 5px; background: color-mix(in srgb, var(--copper) 16%, transparent); color: var(--copper); font-weight: 700; margin-right: 5px; }
 
-  .fade { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s ease; }
-  .fade.in { opacity: 1; transform: none; }
-  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } .fade { opacity: 1; transform: none; } .j-grid { min-width: 0; } }
+  /* ===== 动效系统：编排式入场 / 滚动逐项显现 / 页面转场 ===== */
+  @keyframes riseIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes lineGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes pageIn { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+  .narrate > * { opacity: 0; animation: riseIn .7s cubic-bezier(.22,.61,.36,1) forwards; }
+  .narrate > .h-eye { animation-delay: .05s; }
+  .narrate > .h-title { animation-delay: .16s; }
+  .narrate > .h-sub { animation-delay: .3s; }
+  .narrate > .h-stats { animation-delay: .44s; }
+  .narrate > .seg { animation-delay: .58s; }
+  .narrate > .finalize { animation-delay: .7s; }
+  .narrate > .final-badge { animation-delay: .58s; }
+  .stagewrap { opacity: 0; animation: riseIn .8s cubic-bezier(.22,.61,.36,1) .34s forwards; }
+  .h-eye::before { transform-origin: left; animation: lineGrow .6s ease .1s backwards; }
+  .fade > * { opacity: 0; transform: translateY(14px); transition: opacity .55s cubic-bezier(.22,.61,.36,1), transform .55s cubic-bezier(.22,.61,.36,1); }
+  .fade.in > * { opacity: 1; transform: none; }
+  .fade.in > *:nth-child(2) { transition-delay: .09s; }
+  .fade.in > *:nth-child(3) { transition-delay: .18s; }
+  .fade.in > *:nth-child(4) { transition-delay: .27s; }
+  .fade.in > *:nth-child(5) { transition-delay: .36s; }
+  .fade.in > *:nth-child(6) { transition-delay: .45s; }
+  .city-page:not([hidden]) { animation: pageIn .4s cubic-bezier(.22,.61,.36,1); }
+  .seg button:active { transform: scale(.96); }
+  .swap { animation: riseIn .45s cubic-bezier(.22,.61,.36,1); }
+  .stop .dot { transition: transform .25s ease; }
+  .stop:hover .dot { transform: scale(1.28); }
+  .cp-day, .jband-btn, .fin-btn { transition-property: color, background, border-color, transform, box-shadow; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } .narrate > *, .stagewrap, .fade > * { opacity: 1 !important; transform: none !important; } .j-grid { min-width: 0; } }
   @media print {
     body { background: #fff; color: #111; }
     .seg, .stage-legend, .tip-float { display: none; }
@@ -296,6 +321,73 @@
   .amk-plane { background: #B4552F; }
   .amk-sight { background: #FFFFFF; border-color: #B4732A; }
   .amk-hotel { background: #5D6E7E; }
+
+  /* ===== 定稿模式 ===== */
+  .finalize { margin-top: 18px; display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
+  .fin-btn { font: 600 14px var(--sans); cursor: pointer; color: #1a1206; background: linear-gradient(180deg, var(--copper), var(--copper-deep)); border: 0; border-radius: 999px; padding: 10px 22px; box-shadow: 0 4px 18px var(--copper-glow); }
+  .fin-btn:hover { transform: translateY(-1px); box-shadow: 0 7px 24px var(--copper-glow); }
+  .fin-hint { font-size: 12px; color: var(--haze-faint); }
+  .final-badge { margin-top: 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .final-badge[hidden] { display: none; }
+  .fb-mark { font-family: var(--serif); font-size: 13px; font-weight: 700; color: var(--copper); border: 1.5px solid var(--copper); border-radius: 999px; padding: 5px 15px; letter-spacing: .22em; }
+  .fb-name { font-family: var(--serif); font-size: 17px; font-weight: 600; }
+  .fb-undo { font: 12px var(--sans); color: var(--haze-faint); background: none; border: none; border-bottom: 1px dashed var(--hair-2); cursor: pointer; padding: 0 0 1px; }
+  .fb-undo:hover { color: var(--copper); border-color: var(--copper); }
+  body.final .seg, body.final .finalize, body.final #secCompare { display: none; }
+  .modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(9,15,27,.55); backdrop-filter: blur(5px); animation: riseIn .25s ease; }
+  .modal[hidden] { display: none; }
+  .modal-card { background: linear-gradient(180deg, var(--dusk), var(--dusk-2)); border: 1px solid var(--hair-2); border-radius: 18px; padding: 28px 30px; max-width: 400px; margin: 20px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  .modal-card h3 { font-family: var(--serif); font-size: 21px; margin: 0 0 10px; }
+  .modal-card p { margin: 0 0 22px; font-size: 13.5px; color: var(--haze-soft); line-height: 1.7; }
+  .modal-acts { display: flex; gap: 10px; justify-content: flex-end; }
+  .m-cancel { font: 600 13.5px var(--sans); cursor: pointer; color: var(--haze-soft); background: none; border: 1px solid var(--hair-2); border-radius: 999px; padding: 9px 18px; }
+  .m-cancel:hover { border-color: var(--haze-soft); }
+  .m-ok { font: 600 13.5px var(--sans); cursor: pointer; color: #1a1206; background: linear-gradient(180deg, var(--copper), var(--copper-deep)); border: 0; border-radius: 999px; padding: 9px 22px; }
+
+  /* ===== 报销 · 消费记录 ===== */
+  #secExpense[hidden] { display: none; }
+  .ex-top { max-width: 640px; margin-bottom: 30px; }
+  .ex-sum { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .ex-sum .lbl { font-size: 13px; color: var(--haze-soft); }
+  .ex-sum b { font-family: var(--mono); font-size: 26px; color: var(--copper); font-variant-numeric: tabular-nums; }
+  .ex-bar { height: 2px; background: var(--hair); margin: 12px 0 10px; }
+  .ex-bar i { display: block; height: 100%; width: 0; background: var(--copper); transition: width .6s cubic-bezier(.22,.61,.36,1); }
+  .ex-bar i.over { background: var(--bad); }
+  .ex-cats { font-size: 12px; color: var(--haze-faint); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .inv-card { max-width: 640px; margin-bottom: 26px; padding: 15px 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+  .inv-card .l { font-size: 12px; letter-spacing: .1em; color: var(--copper); font-weight: 700; display: block; margin-bottom: 10px; }
+  .inv-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .inv-row input { flex: 1 1 180px; }
+  .ex-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; max-width: 900px; margin-bottom: 22px; align-items: center; }
+  .ex-form input, .ex-form select, .inv-row input, .inv-row button {
+    font: 13px var(--sans); color: var(--haze); background: color-mix(in srgb, var(--dusk) 55%, transparent);
+    border: 1px solid var(--hair-2); border-radius: 8px; padding: 9px 11px; min-width: 0; }
+  .ex-form input:focus, .ex-form select:focus, .inv-row input:focus { outline: none; border-color: var(--copper); }
+  .ef-photo { font: 12.5px var(--sans); color: var(--haze-soft); border: 1px dashed var(--hair-2); border-radius: 8px; padding: 8px 11px; cursor: pointer; display: flex; align-items: center; gap: 7px; }
+  .ef-photo:hover { border-color: var(--copper); color: var(--copper); }
+  .ef-photo input { display: none; }
+  .ef-photo.has { border-style: solid; border-color: var(--good); color: var(--good); }
+  .ef-add, .inv-row button, .ex-tools button, .ex-import {
+    font: 600 13px var(--sans); cursor: pointer; color: var(--copper); background: none;
+    border: 1px solid var(--copper); border-radius: 999px; padding: 9px 18px; transition: background .2s; }
+  .ef-add:hover, .inv-row button:hover, .ex-tools button:hover, .ex-import:hover { background: color-mix(in srgb, var(--copper) 13%, transparent); }
+  table.ex-tbl td, table.ex-tbl th { white-space: nowrap; }
+  table.ex-tbl td { font-size: 13px; }
+  .ex-status { font: 600 12px var(--sans); background: none; border: none; cursor: pointer; padding: 0; }
+  .c-wait, .ex-status.c-wait { color: var(--warn); } .c-done, .ex-status.c-done { color: var(--good); }
+  .c-sub, .ex-status.c-sub { color: var(--haze-faint); } .c-none, .ex-status.c-none { color: var(--haze-faint); }
+  .ex-thumb { width: 34px; height: 34px; object-fit: cover; border-radius: 6px; cursor: zoom-in; border: 1px solid var(--hair-2); display: block; }
+  .ex-del { font: 12px var(--sans); color: var(--haze-faint); background: none; border: none; cursor: pointer; }
+  .ex-del:hover { color: var(--bad); }
+  .ex-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 20px; }
+  .ex-import { display: inline-flex; }
+  .ex-import input { display: none; }
+  .ex-note { font-size: 12px; color: var(--haze-faint); margin-left: auto; }
+  .ex-note i { font-style: normal; }
+  .ex-empty { color: var(--haze-faint); font-size: 13px; }
+  .photo-view { position: fixed; inset: 0; z-index: 210; background: rgba(9,15,27,.8); display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
+  .photo-view[hidden] { display: none; }
+  .photo-view img { max-width: 92vw; max-height: 90vh; border-radius: 10px; }
   .cm-note { font-size: 11.5px; color: var(--haze-faint); margin-top: 8px; }
   .navlinks { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 4px; font-size: 13px; }
   .navlinks .nk { color: var(--haze-faint); font-size: 12px; margin-right: 2px; }
@@ -322,6 +414,8 @@
         <button data-plan="D" aria-pressed="false">抗台风 <span class="pr">6,400</span></button>
         <button data-plan="B" aria-pressed="false">舒适 <span class="pr">7,308</span></button>
       </div>
+      <div class="finalize"><button class="fin-btn" id="finBtn">敲定当前方案</button><span class="fin-hint">与组员商定后点击，整站切换为该方案的执行视图</span></div>
+      <div class="final-badge" id="finalBadge" hidden><span class="fb-mark">已定稿</span><span class="fb-name" id="fbName"></span><button class="fb-undo" id="fbUndo">重新比选</button></div>
     </div>
     <div class="stagewrap">
       <div class="stage">
@@ -373,7 +467,7 @@
   </div></section>
 
   <!-- 对比 + 建议 -->
-  <section class="band"><div class="wrap">
+  <section class="band" id="secCompare"><div class="wrap">
     <div class="sec-head">
       <div><span class="num">03 / 对比</span><h2>四版方案对比</h2></div>
       <p class="hint">点列头切换方案 · 文字颜色：绿＝优，琥珀＝需注意，红＝偏弱 · 铜色描线＝当前方案</p>
@@ -403,6 +497,41 @@
     </ul>
   </div></section>
 
+  <!-- 报销 · 定稿后显示 -->
+  <section class="band" id="secExpense" hidden><div class="wrap">
+    <div class="sec-head">
+      <div><span class="num">04 / 报销</span><h2>消费记录与发票</h2></div>
+      <p class="hint">记录存在本设备浏览器；组员各自记账后"导出备份"发组长，组长"导入合并"即可汇总。</p>
+    </div>
+    <div class="ex-top">
+      <div class="ex-sum"><span class="lbl">已记录支出</span><b id="exTotal">¥0</b><span class="lbl">/ 经费 ¥7,500</span></div>
+      <div class="ex-bar"><i id="exBar"></i></div>
+      <div class="ex-cats" id="exCats"></div>
+    </div>
+    <div class="inv-card">
+      <span class="l">报销开票信息 · 向商家开发票时出示（填一次自动保存）</span>
+      <div class="inv-row"><input id="invTitle" placeholder="单位抬头，如：中国人民大学"><input id="invTax" placeholder="纳税人识别号"><button id="invCopy" type="button">复制</button></div>
+    </div>
+    <form class="ex-form" id="exForm">
+      <input type="date" id="efDate" required>
+      <select id="efCity"><option>在途</option><option>平顶山</option><option>宁波</option><option>乐山</option><option>北京</option></select>
+      <select id="efCat"><option>城际交通</option><option>市内交通</option><option>住宿</option><option>餐饮</option><option>其他</option></select>
+      <input type="number" id="efAmt" min="0" step="0.01" placeholder="金额 ¥" required>
+      <input id="efPayer" placeholder="经手人">
+      <select id="efInv"><option>待开票</option><option>已开票</option><option>已提交报销</option><option>无需发票</option></select>
+      <input id="efNote" placeholder="备注：车次 / 酒店名…">
+      <label class="ef-photo" id="efPhotoL">＋发票照片<input type="file" id="efPhoto" accept="image/*"></label>
+      <button type="submit" class="ef-add">记一笔</button>
+    </form>
+    <div class="table-scroll"><table class="mtx ex-tbl"><thead><tr><th>日期</th><th>城市</th><th>类目</th><th>金额</th><th>经手</th><th>发票状态</th><th>照片</th><th></th></tr></thead><tbody id="exBody"></tbody></table></div>
+    <div class="ex-tools">
+      <button id="exCsv" type="button">导出 CSV 汇总</button>
+      <button id="exDump" type="button">导出备份（含照片）</button>
+      <label class="ex-import">导入合并<input type="file" id="exLoad" accept="application/json"></label>
+      <span class="ex-note">发票状态点击可切换：<i class="c-wait">待开票</i> → <i class="c-done">已开票</i> → <i class="c-sub">已提交报销</i></span>
+    </div>
+  </div></section>
+
   <footer class="fine band"><div class="wrap">
     <h3>数据口径 · 请读</h3>
     <div class="fine-grid">
@@ -416,6 +545,9 @@
 
 <div class="city-page" id="cityPage" hidden><div class="wrap cp-inner"><button class="cp-back" id="cpBack">← 返回行程总览</button><div id="cityPageBody"></div></div></div>
 <div class="city-page" id="dayPage" hidden><div class="wrap cp-inner"><button class="cp-back" id="dpBack">← 返回城市页</button><div id="dayPageBody"></div></div></div>
+
+<div class="modal" id="finModal" hidden><div class="modal-card"><h3 id="fmTitle">敲定方案？</h3><p id="fmText"></p><div class="modal-acts"><button class="m-cancel" id="fmCancel" type="button">再想想</button><button class="m-ok" id="fmOk" type="button">敲定</button></div></div></div>
+<div class="photo-view" id="photoView" hidden><img id="pvImg" alt="发票照片"></div>
 
 <script>
   var CITIES = {"beijing": {"name": "北京", "x": 696.6, "y": 270.7}, "pingdingshan": {"name": "平顶山", "x": 646.2, "y": 393.0}, "ningbo": {"name": "宁波", "x": 780.1, "y": 469.6}, "leshan": {"name": "乐山", "x": 491.3, "y": 475.9}, "chengdu": {"name": "成都", "x": 496.2, "y": 455.7}, "zhengzhou": {"name": "郑州", "x": 651.4, "y": 373.0}};
@@ -502,7 +634,7 @@
     var p = PLANS[key];
     document.getElementById('capRoute').innerHTML = p.route.map(function (c, i) { return '<span class="n' + (i === 0 ? ' s' : '') + '">' + CITIES[c].name + '</span>' + (i < p.route.length - 1 ? '<span class="ar">→</span>' : ''); }).join('');
     document.getElementById('capPos').textContent = p.pos;
-    document.getElementById('hCost').textContent = p.cost;
+    animNum(document.getElementById('hCost'), parseInt(p.cost.replace(/[^\d]/g, ''), 10));
   }
   function renderTicket(key) {
     var p = PLANS[key], parts = p.name.split(' ');
@@ -803,6 +935,7 @@
     currentPlan = key;
     document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-plan') === key ? 'true' : 'false'); });
     renderMap(key); renderCap(key); renderJourney(key); renderTicket(key); highlightCol(key);
+    pulse(document.getElementById('jGrid')); pulse(document.getElementById('ticket'));
     applyHash();
   }
   document.querySelectorAll('.seg button').forEach(function (b) { b.addEventListener('click', function () { switchPlan(b.getAttribute('data-plan')); }); });
@@ -812,5 +945,174 @@
   if (!reduce && 'IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { threshold: .12 });
     document.querySelectorAll('section .wrap').forEach(function (s) { s.classList.add('fade'); io.observe(s); });
+  }
+
+  /* ===== 动效工具 ===== */
+  function animNum(el, target) {
+    if (reduce || !el) { if (el) el.textContent = '¥' + target.toLocaleString(); return; }
+    var from = parseInt((el.textContent || '0').replace(/[^\d]/g, ''), 10) || 0, t0 = null;
+    function step(ts) {
+      if (!t0) t0 = ts;
+      var p = Math.min(1, (ts - t0) / 620), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = '¥' + Math.round(from + (target - from) * e).toLocaleString();
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  function pulse(el) { if (reduce || !el) return; el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); }
+
+  /* ===== 定稿模式：敲定后整站只展示该方案的执行视图 ===== */
+  function applyFinal(key) {
+    var on = !!key;
+    document.body.classList.toggle('final', on);
+    document.getElementById('finalBadge').hidden = !on;
+    document.getElementById('secExpense').hidden = !on;
+    if (on) {
+      if (currentPlan !== key) switchPlan(key);
+      document.getElementById('fbName').textContent = '方案 ' + PLANS[key].name + ' · 执行中';
+      try { localStorage.setItem('sc_final', key); } catch (e) {}
+      exInit();
+    } else {
+      try { localStorage.removeItem('sc_final'); } catch (e) {}
+    }
+  }
+  document.getElementById('finBtn').addEventListener('click', function () {
+    var p = PLANS[currentPlan];
+    document.getElementById('fmTitle').textContent = '敲定「方案 ' + p.name + '」？';
+    document.getElementById('fmText').textContent = '整站将切换为该方案的执行视图（隐藏其他方案与对比），并开启消费记录与发票模块。随时可点“重新比选”撤销。4 人城际合计 ' + p.cost + '。';
+    document.getElementById('finModal').hidden = false;
+  });
+  document.getElementById('fmCancel').addEventListener('click', function () { document.getElementById('finModal').hidden = true; });
+  document.getElementById('finModal').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
+  document.getElementById('fmOk').addEventListener('click', function () { document.getElementById('finModal').hidden = true; applyFinal(currentPlan); });
+  document.getElementById('fbUndo').addEventListener('click', function () { applyFinal(null); });
+  (function () {
+    var q = null;
+    try { q = new URLSearchParams(location.search).get('final'); } catch (e) {}
+    var f = q || (function () { try { return localStorage.getItem('sc_final'); } catch (e) { return null; } })();
+    if (f && PLANS[f]) applyFinal(f);
+  })();
+
+  /* ===== 报销 · 消费记录（IndexedDB 本地存储 + 导出合并） ===== */
+  var exDB = null, exReady = false;
+  function dbOpen() {
+    return new Promise(function (res, rej) {
+      if (exDB) return res(exDB);
+      var rq = indexedDB.open('sc-trip', 1);
+      rq.onupgradeneeded = function () { rq.result.createObjectStore('exp', { keyPath: 'id' }); };
+      rq.onsuccess = function () { exDB = rq.result; res(exDB); };
+      rq.onerror = function () { rej(rq.error); };
+    });
+  }
+  function dbAll() { return dbOpen().then(function (db) { return new Promise(function (res) { var out = [], c = db.transaction('exp').objectStore('exp').openCursor(); c.onsuccess = function () { var cur = c.result; if (cur) { out.push(cur.value); cur.continue(); } else res(out); }; }); }); }
+  function dbPut(rec) { return dbOpen().then(function (db) { return new Promise(function (res) { var t = db.transaction('exp', 'readwrite'); t.objectStore('exp').put(rec); t.oncomplete = res; }); }); }
+  function dbDel(id) { return dbOpen().then(function (db) { return new Promise(function (res) { var t = db.transaction('exp', 'readwrite'); t.objectStore('exp').delete(id); t.oncomplete = res; }); }); }
+  function compressImg(file) {
+    return new Promise(function (res) {
+      var img = new Image();
+      img.onload = function () {
+        var m = 1400, w = img.width, h = img.height, s = Math.min(1, m / Math.max(w, h));
+        var cv = document.createElement('canvas'); cv.width = Math.round(w * s); cv.height = Math.round(h * s);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        cv.toBlob(function (b) { res(b || file); }, 'image/jpeg', 0.8);
+      };
+      img.onerror = function () { res(file); };
+      img.src = URL.createObjectURL(file);
+    });
+  }
+  var INV_STATES = ['待开票', '已开票', '已提交报销', '无需发票'];
+  var INV_CLS = { '待开票': 'c-wait', '已开票': 'c-done', '已提交报销': 'c-sub', '无需发票': 'c-none' };
+  function exRender() {
+    dbAll().then(function (rows) {
+      rows.sort(function (a, b) { return (a.date || '').localeCompare(b.date || '') || a.id - b.id; });
+      var body = document.getElementById('exBody'); body.innerHTML = '';
+      var total = 0, cats = {};
+      rows.forEach(function (r) {
+        total += r.amount; cats[r.cat] = (cats[r.cat] || 0) + r.amount;
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td class="mono">' + (r.date || '—') + '</td><td>' + r.city + '</td><td>' + r.cat + '</td>' +
+          '<td class="mono">¥' + r.amount.toLocaleString() + '</td><td>' + (r.payer || '—') + '</td>' +
+          '<td><button class="ex-status ' + (INV_CLS[r.inv] || '') + '" title="点击切换状态">' + r.inv + '</button></td><td></td>' +
+          '<td><button class="ex-del">删除</button></td>';
+        var pcell = tr.children[6];
+        if (r.photo) { var im = document.createElement('img'); im.className = 'ex-thumb'; im.src = URL.createObjectURL(r.photo); im.addEventListener('click', function () { document.getElementById('pvImg').src = im.src; document.getElementById('photoView').hidden = false; }); pcell.appendChild(im); }
+        else pcell.textContent = '—';
+        tr.querySelector('.ex-status').addEventListener('click', function () { r.inv = INV_STATES[(INV_STATES.indexOf(r.inv) + 1) % INV_STATES.length]; dbPut(r).then(exRender); });
+        tr.querySelector('.ex-del').addEventListener('click', function () { if (confirm('删除这笔记录？')) dbDel(r.id).then(exRender); });
+        body.appendChild(tr);
+      });
+      if (!rows.length) body.innerHTML = '<tr><td colspan="8" class="ex-empty">还没有记录 —— 出发后每笔消费顺手记一笔。</td></tr>';
+      animNum(document.getElementById('exTotal'), Math.round(total));
+      var pct = Math.min(100, total / 7500 * 100);
+      var bar = document.getElementById('exBar'); bar.style.width = pct + '%'; bar.classList.toggle('over', total > 7500);
+      document.getElementById('exCats').innerHTML = Object.keys(cats).map(function (k) { return k + ' ¥' + Math.round(cats[k]).toLocaleString(); }).join('　·　') || '';
+    });
+  }
+  var exPhotoBlob = null;
+  function exInit() {
+    if (exReady) { exRender(); return; }
+    exReady = true;
+    try {
+      document.getElementById('invTitle').value = localStorage.getItem('sc_inv_t') || '';
+      document.getElementById('invTax').value = localStorage.getItem('sc_inv_x') || '';
+    } catch (e) {}
+    ['invTitle', 'invTax'].forEach(function (id, i) {
+      document.getElementById(id).addEventListener('change', function () { try { localStorage.setItem(i ? 'sc_inv_x' : 'sc_inv_t', this.value); } catch (e) {} });
+    });
+    document.getElementById('invCopy').addEventListener('click', function () {
+      var s = '抬头：' + document.getElementById('invTitle').value + '\n税号：' + document.getElementById('invTax').value;
+      (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject()).then(function () { document.getElementById('invCopy').textContent = '已复制'; setTimeout(function () { document.getElementById('invCopy').textContent = '复制'; }, 1500); }).catch(function () { prompt('手动复制：', s); });
+    });
+    document.getElementById('efPhoto').addEventListener('change', function () {
+      var f = this.files[0];
+      if (!f) { exPhotoBlob = null; return; }
+      compressImg(f).then(function (b) { exPhotoBlob = b; document.getElementById('efPhotoL').classList.add('has'); document.getElementById('efPhotoL').firstChild.textContent = '✓已选照片'; });
+    });
+    document.getElementById('exForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var amt = parseFloat(document.getElementById('efAmt').value);
+      if (!(amt > 0)) return;
+      dbPut({ id: Date.now() + Math.floor(Math.random() * 1000), date: document.getElementById('efDate').value,
+        city: document.getElementById('efCity').value, cat: document.getElementById('efCat').value, amount: amt,
+        payer: document.getElementById('efPayer').value.trim(), inv: document.getElementById('efInv').value,
+        note: document.getElementById('efNote').value.trim(), photo: exPhotoBlob }).then(function () {
+        exPhotoBlob = null; document.getElementById('efAmt').value = ''; document.getElementById('efNote').value = '';
+        document.getElementById('efPhoto').value = ''; document.getElementById('efPhotoL').classList.remove('has');
+        document.getElementById('efPhotoL').firstChild.textContent = '＋发票照片';
+        exRender();
+      });
+    });
+    document.getElementById('photoView').addEventListener('click', function () { this.hidden = true; });
+    function download(name, blob) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); }
+    document.getElementById('exCsv').addEventListener('click', function () {
+      dbAll().then(function (rows) {
+        var csv = '﻿日期,城市,类目,金额,经手人,发票状态,备注\n' + rows.map(function (r) {
+          return [r.date, r.city, r.cat, r.amount, r.payer, r.inv, (r.note || '').replace(/,/g, '，')].join(',');
+        }).join('\n');
+        download('三城调研报销汇总.csv', new Blob([csv], { type: 'text/csv' }));
+      });
+    });
+    document.getElementById('exDump').addEventListener('click', function () {
+      dbAll().then(function (rows) {
+        return Promise.all(rows.map(function (r) {
+          if (!r.photo) return Promise.resolve(Object.assign({}, r, { photo: null }));
+          return new Promise(function (res) { var fr = new FileReader(); fr.onload = function () { res(Object.assign({}, r, { photo: fr.result })); }; fr.readAsDataURL(r.photo); });
+        }));
+      }).then(function (out) { download('消费记录备份.json', new Blob([JSON.stringify(out)], { type: 'application/json' })); });
+    });
+    document.getElementById('exLoad').addEventListener('change', function () {
+      var f = this.files[0]; if (!f) return;
+      f.text().then(function (t) {
+        var arr = JSON.parse(t), n = 0;
+        return Promise.all(arr.map(function (r) {
+          if (r.photo && typeof r.photo === 'string') {
+            return fetch(r.photo).then(function (rs) { return rs.blob(); }).then(function (b) { r.photo = b; n++; return dbPut(r); });
+          }
+          n++; return dbPut(r);
+        })).then(function () { alert('已合并 ' + n + ' 条记录'); exRender(); });
+      }).catch(function () { alert('文件格式不对，需要本页导出的备份 JSON'); });
+      this.value = '';
+    });
+    exRender();
   }
 </script>
