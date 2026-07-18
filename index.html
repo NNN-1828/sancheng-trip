@@ -320,7 +320,7 @@
   .stop.link:hover .date { color: var(--copper); }
   /* 城市地图（真实市界 + 点位跳高德） */
   .citymap { max-width: 640px; margin: 0 0 40px; }
-  .cm-card { border: 1px solid var(--hair-2); border-radius: var(--radius); overflow: hidden; background: radial-gradient(120% 90% at 70% 15%, color-mix(in srgb, var(--dusk) 60%, var(--sea)), var(--sea) 70%); }
+  .cm-card { border: 1px solid var(--hair-2); border-radius: var(--radius); overflow: hidden; background: radial-gradient(120% 90% at 70% 15%, color-mix(in srgb, var(--dusk) 60%, var(--sea)), var(--sea) 70%); box-shadow: 0 16px 44px rgba(0,0,0,.16); }
   .cm-card > svg { display: block; width: 100%; height: auto; }
   /* 真实街道底图（构建时内嵌瓦片，底色恒为浅色，故用固定色保证可读） */
   .cm-route { fill: none; stroke: #B4552F; stroke-width: 2.5; stroke-dasharray: 4 6; }
@@ -727,7 +727,7 @@
       var btn = band.querySelector('.jband-btn'), city = btn.getAttribute('data-city');
       function lit(on) { g.querySelectorAll('.stop').forEach(function (s) { var i = +s.getAttribute('data-i'); s.classList.toggle('lit', on && i >= a && i <= b); }); }
       btn.addEventListener('click', function () { openCity(city); });
-      band.addEventListener('mouseenter', function () { lit(true); showTipAt(btn, cityTipHtml(city)); });
+      band.addEventListener('mouseenter', function () { lit(true); showTipSoon(btn, cityTipHtml(city), 200); });
       band.addEventListener('mouseleave', function () { lit(false); hideTip(); });
     });
     g.querySelectorAll('.stop').forEach(function (s) {
@@ -735,7 +735,7 @@
       if (!city) return;
       s.classList.add('link');
       s.addEventListener('click', function () { openDay(city, i); });
-      s.addEventListener('mouseenter', function () { showTipAt(s.querySelector('.dot') || s, '<span class="tt">' + PLANS[key].days[i][0] + ' · ' + CITYINFO[city].name + '</span><span class="go">点击查看当日时段安排 →</span>'); });
+      s.addEventListener('mouseenter', function () { showTipSoon(s.querySelector('.dot') || s, '<span class="tt">' + PLANS[key].days[i][0] + ' · ' + CITYINFO[city].name + '</span><span class="go">点击查看当日时段安排 →</span>'); });
       s.addEventListener('mouseleave', hideTip);
     });
   }
@@ -743,6 +743,7 @@
     var c = CITYINFO[city];
     return '<span class="tt">' + c.name + '</span>' + c.tag + '<span class="go">点击进入该城详细行程 →</span>';
   }
+  var tipHideT = null, tipShowT = null;
   function showTipAt(el, html) {
     tip.innerHTML = html;
     tip.style.left = '0px'; tip.style.top = '0px';
@@ -754,9 +755,16 @@
     tip.classList.toggle('below', below);
     tip.style.left = x + 'px';
     tip.style.top = (below ? r.bottom + 13 : above) + 'px';
+    clearTimeout(tipHideT);
+    tipHideT = setTimeout(hideTip, 2600); /* 绝对兜底：任何路径的残留 2.6s 内自愈 */
+  }
+  function showTipSoon(el, html, delay) { /* 悬停意图判定，扫过不触发 */
+    clearTimeout(tipShowT);
+    tipShowT = setTimeout(function () { showTipAt(el, html); }, delay || 280);
   }
   window.addEventListener('scroll', function () { hideTip(); }, { capture: true, passive: true });
-  function hideTip() { tip.classList.remove('show'); }
+  document.addEventListener('mousedown', function () { hideTip(); }, true);
+  function hideTip() { clearTimeout(tipShowT); tip.classList.remove('show'); }
 
   var KIND = { transit:'在途', survey:'调研', relax:'放松', todo:'待补' };
   /* ---- 单日时段计划（交通时刻已知，调研点位标"待补"） ---- */
@@ -817,7 +825,7 @@
         '<circle cx="' + p.x + '" cy="' + p.y + '" r="9"></circle>' +
         '<text x="' + (p.x + o.dx) + '" y="' + (p.y + o.dy) + '" text-anchor="' + (o.a || 'start') + '">' + p.n + '</text></a>';
     }).join('');
-    return '<div class="citymap"><div class="cm-card" data-mapcity="' + city + '"' + (seq && seq.length > 1 ? ' data-seq="' + seq.join(',') + '"' : '') + '><svg viewBox="0 0 ' + g.w + ' ' + g.h + '" role="img" aria-label="' + CITYINFO[city].name + '地图">' +
+    return '<div class="citymap"><div class="cm-card" data-mapcity="' + city + '"' + (seq && seq.length ? ' data-seq="' + seq.join(',') + '"' : '') + '><svg viewBox="0 0 ' + g.w + ' ' + g.h + '" role="img" aria-label="' + CITYINFO[city].name + '地图">' +
       tiles + route + pois + '</svg></div>' +
       '<p class="cm-note">真实街道底图（' + CITYTILES._attrib + '，构建时内嵌）· 点位坐标经地理编码校准 · 点击点位名跳转高德导航。</p></div>';
   }
@@ -871,14 +879,20 @@
         var div = document.createElement('div'); div.className = 'cm-live';
         card.innerHTML = ''; card.appendChild(div);
         var map = new AMap.Map(div, { mapStyle: 'amap://styles/whitesmoke', viewMode: '2D', resizeEnable: true });
+        var mks = {};
         Object.keys(g.pois).forEach(function (k) {
           var p = g.pois[k]; if (!p.lat) return;
           var mk = new AMap.Marker({ map: map, position: wgs2gcj(p.lon, p.lat), title: p.n, anchor: 'center',
             content: '<div class="amk amk-' + p.kind + '"></div>',
             label: { content: p.n, direction: 'top', offset: new AMap.Pixel(0, -6) } });
           mk.on('click', function () { window.open(navUrl(city, p.n), '_blank'); });
+          mks[k] = mk;
         });
-        map.setFitView(null, true, [46, 46, 46, 46]);
+        /* 视野聚焦：单日页只框当天涉及的点位（不再被远郊景点拉成全市域） */
+        var focus = seq.filter(function (k) { return mks[k]; });
+        if (focus.length > 1) map.setFitView(focus.map(function (k) { return mks[k]; }), true, [70, 70, 70, 70]);
+        else if (focus.length === 1) map.setZoomAndCenter(13, mks[focus[0]].getPosition());
+        else map.setFitView(null, true, [46, 46, 46, 46]);
         var pts = seq.map(function (k) { return g.pois[k]; }).filter(function (p) { return p && p.lat; }).map(function (p) { return wgs2gcj(p.lon, p.lat); });
         if (pts.length > 1) {
           map.plugin(['AMap.Driving'], function () {
@@ -913,7 +927,7 @@
       var gi = +row.getAttribute('data-gi');
       row.addEventListener('click', function () { openDay(city, gi); });
       row.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDay(city, gi); } });
-      row.addEventListener('mouseenter', function () { showTipAt(row.querySelector('.nd') || row, '<span class="tt">' + PLANS[currentPlan].days[gi][0] + ' 当日安排</span><span class="go">点击查看逐时段计划与当日路线 →</span>'); });
+      row.addEventListener('mouseenter', function () { showTipSoon(row.querySelector('.nd') || row, '<span class="tt">' + PLANS[currentPlan].days[gi][0] + ' 当日安排</span><span class="go">点击查看逐时段计划与当日路线 →</span>'); });
       row.addEventListener('mouseleave', hideTip);
     });
     upgradeMapsIn(document.getElementById('cityPageBody'));
