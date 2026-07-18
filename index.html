@@ -255,10 +255,26 @@
 
   .j-tip { font-size: 12.5px; color: var(--haze-faint); margin: 16px 0 0; line-height: 1.6; }
   .j-tip b { color: var(--haze-soft); font-weight: 600; }
-  .tip-float { position: fixed; z-index: 60; pointer-events: none; background: var(--dusk); border: 1px solid var(--copper); border-radius: 11px; padding: 11px 15px; font-size: 12.5px; color: var(--haze-soft); box-shadow: 0 14px 34px rgba(0,0,0,.4); max-width: 250px; opacity: 0; transform: translateY(6px); transition: opacity .16s, transform .16s; line-height: 1.55; }
+  /* 锚定式预览气泡：定位在目标元素上方居中、带指向箭头；滚动即隐藏 */
+  .tip-float { position: fixed; z-index: 60; pointer-events: none; min-width: 150px; max-width: 240px;
+    background: color-mix(in srgb, var(--dusk) 94%, transparent); backdrop-filter: blur(10px);
+    border: 1px solid color-mix(in srgb, var(--copper) 50%, transparent); border-radius: 12px;
+    padding: 12px 16px; font-size: 12.5px; color: var(--haze-soft); line-height: 1.55;
+    box-shadow: 0 18px 44px rgba(0,0,0,.35);
+    opacity: 0; transform: translateY(7px) scale(.96); transform-origin: bottom center;
+    transition: opacity .16s ease, transform .22s cubic-bezier(.22,.61,.36,1); }
   .tip-float.show { opacity: 1; transform: none; }
+  .tip-float::after { content: ""; position: absolute; left: 50%; bottom: -5.5px; width: 10px; height: 10px;
+    transform: translateX(-50%) rotate(45deg); background: var(--dusk);
+    border-right: 1px solid color-mix(in srgb, var(--copper) 50%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--copper) 50%, transparent); }
+  .tip-float.below { transform-origin: top center; }
+  .tip-float.below::after { bottom: auto; top: -5.5px; border-right: none; border-bottom: none;
+    border-left: 1px solid color-mix(in srgb, var(--copper) 50%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--copper) 50%, transparent); }
   .tip-float .tt { font-family: var(--serif); font-size: 15px; color: var(--copper); font-weight: 600; display: block; margin-bottom: 3px; }
-  .tip-float .go { color: var(--copper); font-weight: 600; }
+  .tip-float .go { display: block; margin-top: 7px; color: var(--copper); font-weight: 600; }
+  @media (pointer: coarse) { .tip-float { display: none !important; } }
 
   /* 城市详细行程页 · 全屏跳转 */
   .city-page { position: fixed; inset: 0; z-index: 100; overflow-y: auto;
@@ -711,8 +727,7 @@
       var btn = band.querySelector('.jband-btn'), city = btn.getAttribute('data-city');
       function lit(on) { g.querySelectorAll('.stop').forEach(function (s) { var i = +s.getAttribute('data-i'); s.classList.toggle('lit', on && i >= a && i <= b); }); }
       btn.addEventListener('click', function () { openCity(city); });
-      band.addEventListener('mouseenter', function (e) { lit(true); showTip(e, city); });
-      band.addEventListener('mousemove', moveTip);
+      band.addEventListener('mouseenter', function () { lit(true); showTipAt(btn, cityTipHtml(city)); });
       band.addEventListener('mouseleave', function () { lit(false); hideTip(); });
     });
     g.querySelectorAll('.stop').forEach(function (s) {
@@ -720,21 +735,27 @@
       if (!city) return;
       s.classList.add('link');
       s.addEventListener('click', function () { openDay(city, i); });
-      s.addEventListener('mouseenter', function (e) { tip.innerHTML = '<span class="tt">' + PLANS[key].days[i][0] + ' · ' + CITYINFO[city].name + '</span>点击查看当日时段安排 →'; tip.classList.add('show'); moveTip(e); });
-      s.addEventListener('mousemove', moveTip);
+      s.addEventListener('mouseenter', function () { showTipAt(s.querySelector('.dot') || s, '<span class="tt">' + PLANS[key].days[i][0] + ' · ' + CITYINFO[city].name + '</span><span class="go">点击查看当日时段安排 →</span>'); });
       s.addEventListener('mouseleave', hideTip);
     });
   }
-  function showTip(e, city) {
+  function cityTipHtml(city) {
     var c = CITYINFO[city];
-    tip.innerHTML = '<span class="tt">' + c.name + '</span>' + c.tag + '<br><span class="go">点击查看该城详细行程 →</span>';
-    tip.classList.add('show'); moveTip(e);
+    return '<span class="tt">' + c.name + '</span>' + c.tag + '<span class="go">点击进入该城详细行程 →</span>';
   }
-  function moveTip(e) {
-    var x = e.clientX + 16, y = e.clientY + 16;
-    if (x + 262 > window.innerWidth) x = e.clientX - 262;
-    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  function showTipAt(el, html) {
+    tip.innerHTML = html;
+    tip.style.left = '0px'; tip.style.top = '0px';
+    tip.classList.add('show');
+    var r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+    var x = Math.max(10, Math.min(window.innerWidth - tw - 10, r.left + r.width / 2 - tw / 2));
+    var above = r.top - th - 13;
+    var below = above <= 8;
+    tip.classList.toggle('below', below);
+    tip.style.left = x + 'px';
+    tip.style.top = (below ? r.bottom + 13 : above) + 'px';
   }
+  window.addEventListener('scroll', function () { hideTip(); }, { capture: true, passive: true });
   function hideTip() { tip.classList.remove('show'); }
 
   var KIND = { transit:'在途', survey:'调研', relax:'放松', todo:'待补' };
@@ -892,8 +913,7 @@
       var gi = +row.getAttribute('data-gi');
       row.addEventListener('click', function () { openDay(city, gi); });
       row.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDay(city, gi); } });
-      row.addEventListener('mouseenter', function (e) { tip.innerHTML = '<span class="tt">' + PLANS[currentPlan].days[gi][0] + ' 当日安排</span>点击查看逐时段计划与当日路线 →'; tip.classList.add('show'); moveTip(e); });
-      row.addEventListener('mousemove', moveTip);
+      row.addEventListener('mouseenter', function () { showTipAt(row.querySelector('.nd') || row, '<span class="tt">' + PLANS[currentPlan].days[gi][0] + ' 当日安排</span><span class="go">点击查看逐时段计划与当日路线 →</span>'); });
       row.addEventListener('mouseleave', hideTip);
     });
     upgradeMapsIn(document.getElementById('cityPageBody'));
