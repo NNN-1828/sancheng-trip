@@ -19,14 +19,14 @@
   }
   @media (prefers-color-scheme: light) {
     :root {
-      /* 晨光旅途 · 暖浅版 */
-      --void: #F0E9DC; --night: #F6F0E5; --dusk: #FFFFFF; --dusk-2: #FBF6ED;
-      --haze: #22303F; --haze-soft: #5D6E7E; --haze-faint: #8B99A7;
-      --copper: #B4732A; --copper-deep: #97591C; --copper-glow: rgba(180,115,42,.28);
-      --dawn: #B4552F; --dawn-glow: rgba(180,85,47,.25);
-      --sea: #DEE7EC; --land: #ECE3D3; --land-edge: #C4A87E;
-      --hair: rgba(34,48,63,.12); --hair-2: rgba(34,48,63,.22);
-      --good: #2E7D5B; --warn: #B4732A; --bad: #B4552F;
+      /* 晨光旅途 · 冷调近白（书页白，非奶油底） */
+      --void: #EFF1F4; --night: #F6F8FA; --dusk: #FFFFFF; --dusk-2: #F7F9FB;
+      --haze: #1E2B36; --haze-soft: #54626E; --haze-faint: #8292A0;
+      --copper: #A5641F; --copper-deep: #8A5218; --copper-glow: rgba(165,100,31,.22);
+      --dawn: #AC4A28; --dawn-glow: rgba(172,74,40,.18);
+      --sea: #E4EAEF; --land: #EEF1F3; --land-edge: #B7C2CC;
+      --hair: rgba(30,43,54,.12); --hair-2: rgba(30,43,54,.22);
+      --good: #22704F; --warn: #A5641F; --bad: #AC4A28;
     }
   }
   :root[data-theme="dark"] {
@@ -39,13 +39,13 @@
     --good:#6FBF9A;--warn:#E4AC66;--bad:#DB7E76;
   }
   :root[data-theme="light"] {
-    --void:#F0E9DC;--night:#F6F0E5;--dusk:#FFFFFF;--dusk-2:#FBF6ED;
-    --haze:#22303F;--haze-soft:#5D6E7E;--haze-faint:#8B99A7;
-    --copper:#B4732A;--copper-deep:#97591C;--copper-glow:rgba(180,115,42,.28);
-    --dawn:#B4552F;--dawn-glow:rgba(180,85,47,.25);
-    --sea:#DEE7EC;--land:#ECE3D3;--land-edge:#C4A87E;
-    --hair:rgba(34,48,63,.12);--hair-2:rgba(34,48,63,.22);
-    --good:#2E7D5B;--warn:#B4732A;--bad:#B4552F;
+    --void:#EFF1F4;--night:#F6F8FA;--dusk:#FFFFFF;--dusk-2:#F7F9FB;
+    --haze:#1E2B36;--haze-soft:#54626E;--haze-faint:#8292A0;
+    --copper:#A5641F;--copper-deep:#8A5218;--copper-glow:rgba(165,100,31,.22);
+    --dawn:#AC4A28;--dawn-glow:rgba(172,74,40,.18);
+    --sea:#E4EAEF;--land:#EEF1F3;--land-edge:#B7C2CC;
+    --hair:rgba(30,43,54,.12);--hair-2:rgba(30,43,54,.22);
+    --good:#22704F;--warn:#A5641F;--bad:#AC4A28;
   }
 
   * { box-sizing: border-box; }
@@ -121,7 +121,6 @@
   .band { border-top: 1px solid var(--hair); }
   .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: clamp(26px, 4vw, 44px); }
   .sec-head h2 { font-family: var(--serif); font-size: clamp(23px, 3vw, 31px); font-weight: 600; letter-spacing: .01em; }
-  .sec-head .num { font-family: var(--mono); font-size: 12px; letter-spacing: .2em; color: var(--copper); text-transform: uppercase; }
   .sec-head .hint { font-size: 13px; color: var(--haze-faint); max-width: 40ch; }
 
   /* ===== JOURNEY (逐日 · 城市分组，同一网格保证括号与日子对齐) ===== */
@@ -212,7 +211,8 @@
   @keyframes pageIn { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
   .narrate > * { opacity: 0; animation: riseIn .7s cubic-bezier(.22,.61,.36,1) forwards; }
   .narrate > .h-eye { animation-delay: .05s; }
-  .narrate > .h-title { animation-delay: .16s; }
+  .narrate > .h-title { animation-name: titleIn; animation-delay: .16s; animation-duration: .9s; }
+  @keyframes titleIn { from { opacity: 0; transform: translateY(20px); filter: blur(7px); } to { opacity: 1; transform: none; filter: blur(0); } }
   .narrate > .h-sub { animation-delay: .3s; }
   .narrate > .h-stats { animation-delay: .44s; }
   .narrate > .seg { animation-delay: .58s; }
@@ -220,7 +220,8 @@
   .narrate > .final-badge { animation-delay: .58s; }
   .stagewrap { opacity: 0; animation: riseIn .8s cubic-bezier(.22,.61,.36,1) .34s forwards; }
   .h-eye::before { transform-origin: left; animation: lineGrow .6s ease .1s backwards; }
-  .fade > * { opacity: 0; transform: translateY(14px); transition: opacity .55s cubic-bezier(.22,.61,.36,1), transform .55s cubic-bezier(.22,.61,.36,1); }
+  @keyframes forceVisible { to { opacity: 1; transform: none; } }
+  .fade > * { opacity: 0; transform: translateY(14px); transition: opacity .55s cubic-bezier(.22,.61,.36,1), transform .55s cubic-bezier(.22,.61,.36,1); animation: forceVisible 0s 2.8s forwards; }
   .fade.in > * { opacity: 1; transform: none; }
   .fade.in > *:nth-child(2) { transition-delay: .09s; }
   .fade.in > *:nth-child(3) { transition-delay: .18s; }
@@ -253,7 +254,7 @@
   table.mtx th.col-on { color: var(--copper); box-shadow: inset 0 -2px 0 var(--copper); }
   table.mtx td.col-on { box-shadow: inset 2px 0 0 var(--copper), inset -2px 0 0 var(--copper); background: color-mix(in srgb, var(--copper) 5%, transparent); }
   table.mtx tbody tr:last-child td.col-on { box-shadow: inset 2px 0 0 var(--copper), inset -2px 0 0 var(--copper), inset 0 -2px 0 var(--copper); }
-  .cmp-note { margin-top: 18px; padding: 2px 0 2px 16px; border-left: 2px solid var(--copper); font-size: 14px; color: var(--haze-soft); line-height: 1.65; }
+  .cmp-note { margin-top: 20px; font-size: 14px; color: var(--haze-soft); line-height: 1.65; }
   .cmp-note b { color: var(--copper); font-family: var(--serif); }
 
   .j-tip { font-size: 12.5px; color: var(--haze-faint); margin: 16px 0 0; line-height: 1.6; }
@@ -323,7 +324,7 @@
   .stop.link:hover .date { color: var(--copper); }
   /* 城市地图（真实市界 + 点位跳高德） */
   .citymap { max-width: 640px; margin: 0 0 40px; }
-  .cm-card { border: 1px solid var(--hair-2); border-radius: var(--radius); overflow: hidden; background: radial-gradient(120% 90% at 70% 15%, color-mix(in srgb, var(--dusk) 60%, var(--sea)), var(--sea) 70%); box-shadow: 0 16px 44px rgba(0,0,0,.16); }
+  .cm-card { border: 1px solid var(--hair-2); border-radius: var(--radius); overflow: hidden; background: radial-gradient(120% 90% at 70% 15%, color-mix(in srgb, var(--dusk) 60%, var(--sea)), var(--sea) 70%); box-shadow: 0 2px 8px rgba(0,0,0,.10); }
   .cm-card > svg { display: block; width: 100%; height: auto; }
   /* 真实街道底图（构建时内嵌瓦片，底色恒为浅色，故用固定色保证可读） */
   .cm-route { fill: none; stroke: #B4552F; stroke-width: 2.5; stroke-dasharray: 4 6; }
@@ -463,7 +464,7 @@
   <!-- 逐日旅途 -->
   <section class="band"><div class="wrap">
     <div class="sec-head">
-      <div><span class="num">01 / 行程</span><h2>逐日行程节奏</h2></div>
+      <h2>逐日行程节奏</h2>
       <p class="hint">下午到达当天以安顿为主，完整白天做调研，每城预留半天闲逛。</p>
     </div>
     <div class="journey"><div class="j-grid" id="jGrid"></div></div>
@@ -479,7 +480,7 @@
   <!-- 逐段车票 -->
   <section class="band"><div class="wrap">
     <div class="sec-head">
-      <div><span class="num">02 / 车票</span><h2>逐段车票明细</h2></div>
+      <h2>逐段车票明细</h2>
       <p class="hint">普速卧铺是政府定价、即最终报销价；高铁与机票为浮动，临行前抓实价。</p>
     </div>
     <div class="fare" id="ticket"></div>
@@ -488,7 +489,7 @@
   <!-- 对比 + 建议 -->
   <section class="band" id="secCompare"><div class="wrap">
     <div class="sec-head">
-      <div><span class="num">03 / 对比</span><h2>四版方案对比</h2></div>
+      <h2>四版方案对比</h2>
       <p class="hint">点列头切换方案 · 文字颜色：绿＝优，琥珀＝需注意，红＝偏弱 · 铜色描线＝当前方案</p>
     </div>
     <div class="table-scroll">
@@ -519,7 +520,7 @@
   <!-- 报销 · 定稿后显示 -->
   <section class="band" id="secExpense" hidden><div class="wrap">
     <div class="sec-head">
-      <div><span class="num">04 / 报销</span><h2>消费记录与发票</h2></div>
+      <h2>消费记录与发票</h2>
       <p class="hint">记录存在本设备浏览器；组员各自记账后"导出备份"发组长，组长"导入合并"即可汇总。</p>
     </div>
     <div class="ex-top">
@@ -1168,7 +1169,7 @@
     });
   }
   function enhancePlanSwap() {
-    gsap.from('#jGrid .stop .dot', { scale: 0, stagger: { each: 0.045 }, duration: 0.45, ease: 'back.out(2.2)', clearProps: 'transform' });
+    gsap.from('#jGrid .stop .dot', { autoAlpha: 0, scale: 0.55, stagger: { each: 0.04 }, duration: 0.5, ease: 'expo.out', clearProps: 'opacity,visibility,transform' });
     gsap.from('#ticket .fare-tbl tbody tr', { autoAlpha: 0, y: 12, stagger: 0.06, duration: 0.5, ease: 'power2.out', clearProps: 'all' });
   }
   if (!reduce) {
