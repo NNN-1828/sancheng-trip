@@ -7,12 +7,12 @@
     --serif: "Songti SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
     --mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, monospace;
 
-    /* Less, but better · 单一深色编辑风：近黑灰阶 + 象牙白衬线 + 琥珀单强调 */
-    --void: #0D0D0F; --night: #121214; --dusk: #19191C; --dusk-2: #1F1F23;
-    --haze: #F2F0EA; --haze-soft: #A9A8A2; --haze-faint: #6E6E72;
+    /* 星夜征途 · 深蓝夜空 + 象牙白衬线 + 琥珀金单强调 */
+    --void: #090E1C; --night: #0C1226; --dusk: #121A33; --dusk-2: #182342;
+    --haze: #F2F0EA; --haze-soft: #A7ABB8; --haze-faint: #656B7E;
     --copper: #C89B5A; --copper-deep: #A87E41; --copper-glow: rgba(200,155,90,.4);
     --dawn: #C97A5E; --dawn-glow: rgba(201,122,94,.32);
-    --sea: #0F0F12; --land: #1A1A1E; --land-edge: #3B3B42;
+    --sea: #0A0F1E; --land: #131A30; --land-edge: #2E3C5F;
     --hair: rgba(242,240,234,.10); --hair-2: rgba(242,240,234,.20);
     --good: #85BD9F; --warn: #C89B5A; --bad: #C97A5E;
     --radius: 15px; --maxw: 1180px;
@@ -64,7 +64,10 @@
   .stage::before { content: ""; position: absolute; inset: -20%; background: radial-gradient(620px 380px at 28% 28%, rgba(200,155,90,.06), transparent 62%); animation: drift 24s ease-in-out infinite alternate; pointer-events: none; }
   @keyframes drift { to { transform: translate(16%, 9%); } }
   .stage svg { display: block; width: 100%; height: auto; max-height: 60vh; position: relative; }
+  .starfield { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .cruise { fill: #F6F3EA; filter: drop-shadow(0 0 4px var(--copper-glow)); }
+  .halo { transform-box: fill-box; transform-origin: center; animation: haloPulse 3.4s ease-in-out infinite; }
+  @keyframes haloPulse { 50% { transform: scale(1.5); opacity: .07; } }
   body.landing main { display: none; }
   .scroll-cue { cursor: pointer; transition: color .2s; }
   .scroll-cue:hover { color: var(--copper); }
@@ -306,8 +309,8 @@
   .cm-poi text { font-family: var(--serif); font-size: 19px; font-weight: 700; fill: #F2F0EA; paint-order: stroke; stroke: #0F0F12; stroke-width: 4px; }
   .cm-poi:hover text { fill: #C89B5A; }
   .cm-live { height: 420px; width: 100%; }
-  .amap-marker-label { border: 1px solid rgba(200,155,90,.55); border-radius: 6px; background: rgba(22,22,25,.92); color: #F2F0EA; font-family: var(--serif); font-weight: 600; font-size: 12px; padding: 2px 7px; }
-  .amk { width: 15px; height: 15px; border-radius: 50%; background: #C89B5A; border: 2.5px solid #101013; box-shadow: 0 0 7px rgba(200,155,90,.5); cursor: pointer; }
+  .amap-marker-label { border: 1px solid rgba(200,155,90,.55); border-radius: 6px; background: rgba(14,20,38,.92); color: #F2F0EA; font-family: var(--serif); font-weight: 600; font-size: 12px; padding: 2px 7px; }
+  .amk { width: 15px; height: 15px; border-radius: 50%; background: #C89B5A; border: 2.5px solid #0C1226; box-shadow: 0 0 7px rgba(200,155,90,.5); cursor: pointer; }
   .amk-plane { background: #C97A5E; box-shadow: 0 0 7px rgba(201,122,94,.5); }
   .amk-sight { background: #17171A; border-color: #C89B5A; }
   .amk-hotel { background: #8A8A90; box-shadow: none; }
@@ -396,6 +399,7 @@
       <p class="h-sub">4 人 · 8/28 自北京出发 · 宁波 与 乐山 各住 3 晚 · 约 7-8 天</p>
     </div>
     <div class="stage">
+      <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
       <svg viewBox="370 228 545 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="三城路线地图">
         <defs>
           <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
@@ -613,8 +617,8 @@
     });
     startCruise();
   }
-  /* 光点沿路线巡航（零依赖，rAF 实现；reduce 模式不启用） */
-  var cruiseRAF = null, cruiseDot = null;
+  /* 流光拖尾沿路线巡航（头亮尾暗的一串粒子，零依赖 rAF 实现） */
+  var cruiseRAF = null;
   function startCruise() {
     if (reduce) return;
     cancelAnimationFrame(cruiseRAF);
@@ -622,14 +626,24 @@
     if (!paths.length) return;
     var lens = paths.map(function (p) { return p.getTotalLength(); });
     var total = lens.reduce(function (a, b) { return a + b; }, 0);
-    if (!cruiseDot) cruiseDot = el('circle', { r: 2.6, class: 'cruise' });
-    nodesG.appendChild(cruiseDot);
-    var t0 = null, DUR = 9000;
+    var N = 9, GAP = 6.5, dots = [];
+    for (var k = 0; k < N; k++) {
+      var c = el('circle', { r: (2.7 - k * 0.21).toFixed(2), class: 'cruise' });
+      c.style.opacity = (1 - k / N * 0.94).toFixed(2);
+      nodesG.appendChild(c); dots.push(c);
+    }
+    function locate(d) {
+      var dd = ((d % total) + total) % total, i = 0;
+      while (i < lens.length - 1 && dd > lens[i]) { dd -= lens[i]; i++; }
+      return paths[i].getPointAtLength(Math.max(0, Math.min(dd, lens[i])));
+    }
+    var t0 = null, DUR = 8000;
     function step(ts) {
       if (t0 === null) t0 = ts;
-      var d = ((ts - t0) % DUR) / DUR * total, i = 0;
-      while (i < lens.length - 1 && d > lens[i]) { d -= lens[i]; i++; }
-      try { var pt = paths[i].getPointAtLength(Math.max(0, Math.min(d, lens[i]))); cruiseDot.setAttribute('cx', pt.x); cruiseDot.setAttribute('cy', pt.y); } catch (e) {}
+      var head = ((ts - t0) % DUR) / DUR * total;
+      for (var k = 0; k < N; k++) {
+        try { var pt = locate(head - k * GAP); dots[k].setAttribute('cx', pt.x); dots[k].setAttribute('cy', pt.y); } catch (e) {}
+      }
       cruiseRAF = requestAnimationFrame(step);
     }
     cruiseRAF = requestAnimationFrame(step);
@@ -1181,6 +1195,43 @@
         if (!document.body.classList.contains('landing')) initReveal();
       }).catch(function () {});
   }
+  /* 星场粒子：深空星尘，景深视差 + 明暗闪烁（Canvas 零依赖） */
+  (function () {
+    var cv = document.getElementById('starfield');
+    if (!cv || reduce) return;
+    var ctx = cv.getContext('2d'), stars = [], W = 0, H = 0;
+    var DPR = Math.min(2, window.devicePixelRatio || 1);
+    function size() {
+      var r = cv.parentElement.getBoundingClientRect();
+      W = r.width; H = r.height;
+      cv.width = W * DPR; cv.height = H * DPR;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    function init() {
+      stars = [];
+      for (var i = 0; i < 130; i++) {
+        var z = Math.random();
+        stars.push({ x: Math.random() * W, y: Math.random() * H, z: z,
+          r: 0.4 + z * 1.3, p: Math.random() * Math.PI * 2, s: 0.015 + z * 0.05 });
+      }
+    }
+    size(); init();
+    window.addEventListener('resize', function () { size(); init(); });
+    (function draw(ts) {
+      ctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < stars.length; i++) {
+        var st = stars[i];
+        st.x += st.s; if (st.x > W + 2) st.x = -2;
+        var tw = 0.45 + 0.55 * Math.abs(Math.sin(ts / 1400 + st.p));
+        ctx.globalAlpha = (0.10 + st.z * 0.45) * tw;
+        ctx.fillStyle = st.z > 0.75 ? '#D8C9A8' : '#AEB9DC';
+        ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, 6.2832); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(draw);
+    })(0);
+  })();
+
   var revealDone = false;
   function initReveal() {
     if (revealDone || !gsOn) return;
